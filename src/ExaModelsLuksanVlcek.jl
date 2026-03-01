@@ -1,4 +1,4 @@
-module LuksanVleckBenchmark
+module ExaModelsLuksanVleck
 
 import ExaModels: ExaModels, NLPModels
 
