@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Read(//Users/sushin/.julia/registries/General/N/NLPModelsJuMP/**)",
+      "Read(//Users/sushin/.julia/registries/**)",
+      "Bash(xargs cat:*)",
+      "Read(//private/tmp/**)",
+      "Bash(julia --project -e \"import Pkg; Pkg.Registry.update\\(\\); using NLPModelsJuMP; println\\(pkgversion\\(NLPModelsJuMP\\)\\)\")",
+      "Bash(julia -e \"import Pkg; x = Pkg.pkg_server_registry_info\\(\\); println\\(x\\)\")",
+      "Bash(julia --project=. -e 'import Pkg; Pkg.status\\(\\)')",
+      "Bash(julia --project=. -e 'import Pkg; Pkg.instantiate\\(\\); import NLPModelsJuMP; println\\(\"\"\"\"NLPModelsJuMP loaded ok\"\"\"\"\\)')",
+      "Bash(julia --project=. -e 'import Pkg; Pkg.test\\(\\)')",
+      "Bash(julia --project=. -e 'import Pkg; Pkg.develop\\(path=\"\"\"\"$\\(homedir\\(\\)\\)/git/ExaModels.jl\"\"\"\"\\)')",
+      "Bash(julia --project=. -e ':*)"
+    ]
+  }
+}

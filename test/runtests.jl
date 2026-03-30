@@ -1,37 +1,124 @@
-using MadNLP, MadNLPGPU, CUDA
-import LuksanVleckBenchmark
-const LuksanVleckBenchmarkMod = LuksanVleckBenchmark  # Alias to avoid naming conflict
 using Test
+using ExaModels
+using JuMP
+using NLPModels
+using MadNLP
+using KernelAbstractions
+using SparseArrays
+using LuksanVlcekBenchmark
+using CUDA
+using LuksanVlcekBenchmark: ExaModelsBackend, JuMPBackend
 
-const CONFIGS = [
-    #(Float32, nothing),
-    (Float64, nothing),
-    #(Float32, CPU()),
-    #(Float64, CPU()),
-    (Float64, CUDABackend()),
-]
+# Build list of ExaModels backends to test
+const BACKENDS = Any[nothing, CPU()]
 
+if CUDA.functional()
+    push!(BACKENDS, CUDABackend())
+    @info "CUDA backend enabled"
+end
 
-function runtests()
-    @testset "LuksanVleckBenchmark test" begin
-        for name in LuksanVleckBenchmarkMod.NAMES
-            for (T, backend) in CONFIGS
-                # Evaluate the model function from LuksanVleckBenchmarkMod
-                model_func = getfield(LuksanVleckBenchmarkMod, Symbol(name))
-                m = model_func(; T = T, backend = backend)
-                println(name)
-                result = madnlp(m)
-                @testset "$name" begin
-                    @test result.status == MadNLP.SOLVE_SUCCEEDED
+# Small N for test speed
+const N_TEST = 100
+
+function make_exa_model(model_func, N, backend)
+    if backend === nothing
+        return model_func(ExaModelsBackend(), N; prod = true)
+    else
+        return model_func(ExaModelsBackend(), N; backend = backend, prod = true)
+    end
+end
+
+function test_model(name, model_func)
+    @testset "$name" begin
+        # Build JuMP model once and convert to ExaModel for callback reference
+        m_jump = model_func(JuMPBackend(), N_TEST)
+        @test m_jump isa JuMP.Model
+        m_ref = ExaModels.ExaModel(m_jump; prod = true)
+
+        nvar   = get_nvar(m_ref)
+        ncon   = get_ncon(m_ref)
+        nnzj   = get_nnzj(m_ref)
+        nnzh   = get_nnzh(m_ref)
+        x0     = copy(get_x0(m_ref))
+        y0     = zeros(Float64, ncon)
+
+        # Reference sparse structures
+        jac_rows_ref = zeros(Int, nnzj);  jac_cols_ref = zeros(Int, nnzj)
+        hess_rows_ref = zeros(Int, nnzh); hess_cols_ref = zeros(Int, nnzh)
+        jac_structure!(m_ref, jac_rows_ref, jac_cols_ref)
+        hess_structure!(m_ref, hess_rows_ref, hess_cols_ref)
+        jac_vals_ref  = zeros(Float64, nnzj)
+        hess_vals_ref = zeros(Float64, nnzh)
+        jac_coord!(m_ref, x0, jac_vals_ref)
+        hess_coord!(m_ref, x0, y0, hess_vals_ref)
+        J_ref = sparse(jac_rows_ref, jac_cols_ref, jac_vals_ref, ncon, nvar)
+        H_ref = sparse(hess_rows_ref, hess_cols_ref, hess_vals_ref, nvar, nvar)
+
+        # Solve JuMP model with MadNLP as reference
+        r_ref = madnlp(m_ref; print_level = MadNLP.ERROR)
+
+        for backend in BACKENDS
+            @testset "backend=$backend" begin
+                m_exa = make_exa_model(model_func, N_TEST, backend)
+                @test m_exa isa ExaModels.ExaModel
+
+                # WrapperNLPModel copies GPU results to CPU for uniform access
+                m_w = ExaModels.WrapperNLPModel(m_exa)
+
+                # Dimension check
+                @test get_nvar(m_w) == nvar
+                @test get_ncon(m_w) == ncon
+                @test get_nnzj(m_w) == nnzj
+                @test get_nnzh(m_w) == nnzh
+
+                # --- Callback accuracy vs JuMP reference ---
+                @test NLPModels.obj(m_w, x0) ≈ NLPModels.obj(m_ref, x0) atol = 1e-6
+                @test NLPModels.grad(m_w, x0) ≈ NLPModels.grad(m_ref, x0) atol = 1e-6
+                if ncon > 0
+                    @test NLPModels.cons(m_w, x0) ≈ NLPModels.cons(m_ref, x0) atol = 1e-6
+                    @test NLPModels.jprod(m_w, x0, x0) ≈ NLPModels.jprod(m_ref, x0, x0) atol = 1e-6
+                    @test NLPModels.jtprod(m_w, x0, y0) ≈ NLPModels.jtprod(m_ref, x0, y0) atol = 1e-6
+                    @test NLPModels.hprod(m_w, x0, y0, x0) ≈ NLPModels.hprod(m_ref, x0, y0, x0) atol = 1e-6
                 end
+
+                # --- Jacobian structure and values ---
+                if ncon > 0
+                    jac_rows = zeros(Int, nnzj); jac_cols = zeros(Int, nnzj)
+                    jac_structure!(m_w, jac_rows, jac_cols)
+                    jac_vals = zeros(Float64, nnzj)
+                    jac_coord!(m_w, x0, jac_vals)
+                    J = sparse(jac_rows, jac_cols, jac_vals, ncon, nvar)
+                    @test Matrix(J) ≈ Matrix(J_ref) atol = 1e-6
+                end
+
+                # --- Hessian structure and values ---
+                hess_rows = zeros(Int, nnzh); hess_cols = zeros(Int, nnzh)
+                hess_structure!(m_w, hess_rows, hess_cols)
+                hess_vals = zeros(Float64, nnzh)
+                hess_coord!(m_w, x0, y0, hess_vals)
+                H = sparse(hess_rows, hess_cols, hess_vals, nvar, nvar)
+                @test Matrix(H) ≈ Matrix(H_ref) atol = 1e-6
+
+                # --- Solver convergence ---
+                r_exa = madnlp(m_exa; print_level = MadNLP.ERROR)
+                @test r_exa.status == MadNLP.SOLVE_SUCCEEDED
+
+                # Compare solution with JuMP reference
+                @test r_exa.status == r_ref.status
+                @test r_exa.objective ≈ r_ref.objective atol = 1e-4
+                @test Array(r_exa.solution) ≈ Array(r_ref.solution) atol = 1e-4
             end
         end
     end
 end
 
+function runtests()
+    @testset "LuksanVlcekBenchmark" begin
+        for name in LuksanVlcekBenchmark.NAMES
+            model_func = getfield(LuksanVlcekBenchmark, name)
+            test_model(string(name), model_func)
+        end
+    end
+end
+
 runtests()
-
-#@testset "LuksanVleckBenchmark.jl" begin
-#    # Write your tests here.
-
-#end

@@ -1,0 +1,13 @@
+@inline function LV.modified_brown_model(::LV.ExaModelsBackend, N = 1000; T = Float64, backend = nothing, prod = false, kwargs...)
+    n = Int(N)
+    c = EM.ExaCore(T; backend = backend, kwargs...)
+    EM.@var(c, x, N; start = fill(-1, N))
+    EM.@con(c, LV.modified_brown_con1(x))
+    EM.@con(c, LV.modified_brown_con2(x))
+    EM.@con(c, LV.modified_brown_con3(x))
+    EM.@con(c, LV.modified_brown_con_n2(x, n))
+    EM.@con(c, LV.modified_brown_con_n1(x, n))
+    EM.@con(c, LV.modified_brown_con_n(x, n))
+    EM.@obj(c, LV.modified_brown_objective(x, i) for i = 1:N÷2)
+    return EM.ExaModel(c; prod = prod)
+end
