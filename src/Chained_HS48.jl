@@ -3,8 +3,3 @@
 # The index in nC would be out of range; the last constraint is therefore not implemented.
 
 function Chained_HS48_model end
-@inline Chained_HS48_start(i) = mod(i, 3) == 1 ? 3.0 : mod(i, 3) == 2 ? 5.0 : -3.0
-@inline Chained_HS48_con1(x, l) = x[l+1] + x[l+2]^2 + x[l+3] + x[l+4] + x[l+5] - 5
-@inline Chained_HS48_con2(x, l) = x[l+3]^2 - 2 * (x[l+4] + x[l+5]) - 3
-@inline Chained_HS48_objective(x, i) = (x[3(i-1)+1] - 1)^2 + (x[3(i-1)+2] - x[3(i-1)+3])^2 +
-                                (x[3(i-1)+4] - x[3(i-1)+5])^2
