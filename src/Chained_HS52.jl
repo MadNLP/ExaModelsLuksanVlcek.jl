@@ -3,8 +3,8 @@
 # The index in nC would be out of range; the last term in each constraint is therefore not implemented.
 
 function Chained_HS52_model end
-Chained_HS52_con1(x, l) = x[l+1]^2 + 3 * x[l+2]
-Chained_HS52_con2(x, l) = x[l+3]^2 + 2 * x[l+4] - 2 * x[l+5]
-Chained_HS52_con3(x, l) = x[l+2]^2 - x[l+5]
-Chained_HS52_objective(x, i) = (4 * x[4(i-1)+1] - x[4(i-1)+2])^2 + (x[4(i-1)+2] + x[4(i-1)+3] - 2)^4 +
+@inline Chained_HS52_con1(x, l) = x[l+1]^2 + 3 * x[l+2]
+@inline Chained_HS52_con2(x, l) = x[l+3]^2 + 2 * x[l+4] - 2 * x[l+5]
+@inline Chained_HS52_con3(x, l) = x[l+2]^2 - x[l+5]
+@inline Chained_HS52_objective(x, i) = (4 * x[4(i-1)+1] - x[4(i-1)+2])^2 + (x[4(i-1)+2] + x[4(i-1)+3] - 2)^4 +
                                 (x[4(i-1)+4] - 1)^2 + (x[4(i-1)+5] - 1)^2
