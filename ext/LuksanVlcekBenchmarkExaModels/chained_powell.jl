@@ -1,5 +1,5 @@
 @inline function LV.chained_powell_model(::LV.ExaModelsBackend, N = 1000; T = Float64, backend = nothing, prod = false, kwargs...)
-    c = EM.ExaCore(T; backend = backend, kwargs...)
+    c = EM.ExaCore(T; backend = backend, kwargs..., concrete = Val(true))
     EM.@add_var(c, x, N; start = (LV.chained_powell_start(i) for i = 1:N))
     EM.@add_con(c, LV.chained_powell_constraint1(x))
     EM.@add_con(c, LV.chained_powell_constraint2(x, N))

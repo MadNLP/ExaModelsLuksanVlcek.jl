@@ -3,7 +3,7 @@
     It_L1 = [4 * div(i-1, 3) for i in 1:3:nC-3]
     It_L2 = [4 * div(i-1, 3) for i in 2:3:nC-3]
     It_L3 = [4 * div(i-1, 3) for i in 3:3:nC-3]
-    c = EM.ExaCore(T; backend = backend, kwargs...)
+    c = EM.ExaCore(T; backend = backend, kwargs..., concrete = Val(true))
     EM.@add_var(c, x, N; start = (LV.Chained_HS50_start(i) for i = 1:N))
     EM.@add_con(c, LV.Chained_HS50_constraint1(x, l) for l in It_L1)
     EM.@add_con(c, LV.Chained_HS50_constraint2(x, l) for l in It_L2)

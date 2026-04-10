@@ -1,6 +1,6 @@
 @inline function LV.trigo_tridiagonal_model(::LV.ExaModelsBackend, N = 1000; T = Float64, backend = nothing, prod = false, kwargs...)
     n = N
-    c = EM.ExaCore(T; backend = backend, kwargs...)
+    c = EM.ExaCore(T; backend = backend, kwargs..., concrete = Val(true))
     EM.@add_var(c, x, N; start = fill(1, N))
     EM.@add_con(c, LV.trigo_tridiagonal_constraint1(x))
     EM.@add_con(c, LV.trigo_tridiagonal_constraint2(x))

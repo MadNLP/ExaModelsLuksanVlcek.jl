@@ -1,6 +1,6 @@
 @inline function LV.broyden_banded_model(::LV.ExaModelsBackend, N = 1000; T = Float64, backend = nothing, prod = false, kwargs...)
     n = Int(N)
-    c = EM.ExaCore(T; backend = backend, kwargs...)
+    c = EM.ExaCore(T; backend = backend, kwargs..., concrete = Val(true))
     EM.@add_var(c, x, N; start = fill(3, N))
     EM.@add_var(c, y, N; start = fill(0, N))
     EM.@add_con(c, LV.broyden_banded_kconstraint(x, k) for k = 1:N÷2)
