@@ -5,12 +5,12 @@
     for i in 1:N
         JuMP.set_start_value(x[i], -1.0)
     end
-    JuMP.@constraint(m, LV.modified_brown_con1(x) == 0)
-    JuMP.@constraint(m, LV.modified_brown_con2(x) == 0)
-    JuMP.@constraint(m, LV.modified_brown_con3(x) == 0)
-    JuMP.@constraint(m, LV.modified_brown_con_n2(x, n) == 0)
-    JuMP.@constraint(m, LV.modified_brown_con_n1(x, n) == 0)
-    JuMP.@constraint(m, LV.modified_brown_con_n(x, n) == 0)
+    JuMP.@constraint(m, LV.modified_brown_constraint1(x) == 0)
+    JuMP.@constraint(m, LV.modified_brown_constraint2(x) == 0)
+    JuMP.@constraint(m, LV.modified_brown_constraint3(x) == 0)
+    JuMP.@constraint(m, LV.modified_brown_constraint4(x, n) == 0)
+    JuMP.@constraint(m, LV.modified_brown_constraint5(x, n) == 0)
+    JuMP.@constraint(m, LV.modified_brown_constraint6(x, n) == 0)
     JuMP.@objective(m, Min, sum(LV.modified_brown_objective(x, i) for i in 1:N÷2))
     return m
 end

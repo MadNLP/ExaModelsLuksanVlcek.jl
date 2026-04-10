@@ -5,10 +5,10 @@
     for i in 1:N
         JuMP.set_start_value(x[i], 1.0)
     end
-    JuMP.@constraint(m, LV.trigo_tridiagonal_con1(x) == 0)
-    JuMP.@constraint(m, LV.trigo_tridiagonal_con2(x) == 0)
-    JuMP.@constraint(m, LV.trigo_tridiagonal_con_n1(x, n) == 0)
-    JuMP.@constraint(m, LV.trigo_tridiagonal_con_n(x, n) == 0)
+    JuMP.@constraint(m, LV.trigo_tridiagonal_constraint1(x) == 0)
+    JuMP.@constraint(m, LV.trigo_tridiagonal_constraint2(x) == 0)
+    JuMP.@constraint(m, LV.trigo_tridiagonal_constraint3(x, n) == 0)
+    JuMP.@constraint(m, LV.trigo_tridiagonal_constraint4(x, n) == 0)
     JuMP.@objective(m, Min, sum(LV.trigo_tridiagonal_objective(x, i) for i in 2:N-1))
     return m
 end

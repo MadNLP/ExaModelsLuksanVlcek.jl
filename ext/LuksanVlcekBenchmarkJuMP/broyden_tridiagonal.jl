@@ -7,8 +7,7 @@
     JuMP.@constraint(m, [k = 1:N-4], LV.broyden_tridiagonal_constraint(x, k) == 0)
     JuMP.@objective(m, Min,
         sum(LV.broyden_tridiagonal_objective(x, i) for i in 2:N-1) +
-        abs((3 - 2 * x[1]) * x[1] - x[2] + 1)^7 / 3 +
-        abs((3 - 2 * x[N]) * x[N] - x[N-1] + 1)^7 / 3
+        LV.broyden_tridiagonal_objective_boundary(x, N)
     )
     return m
 end

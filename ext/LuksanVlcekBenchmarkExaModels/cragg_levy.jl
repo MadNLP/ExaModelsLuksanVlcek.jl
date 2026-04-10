@@ -1,8 +1,7 @@
 @inline function LV.cragg_levy_model(::LV.ExaModelsBackend, N = 1000; T = Float64, backend = nothing, prod = false, kwargs...)
     c = EM.ExaCore(T; backend = backend, kwargs...)
-    EM.@var(c, x, N; start = (mod(i, 4) == 1 ? 1.0 : 2.0 for i = 1:N))
-    EM.@con(c, 8 * x[k+1] * (x[k+1]^2 - x[k]) - 2 * (1 - x[k+1]) + 4 * (x[k+1] - x[k+2]^2) for k = 1:N-2)
-    EM.@obj(c, (exp(x[2i-1]) - x[2i])^4 + 100 * (x[2i] - x[2i+1])^6 +
-               tan(x[2i+1] - x[2i+2])^4 + 8 * x[2i-1]^8 + (x[2i+2] - 1)^2 for i = 1:N÷2-1)
+    EM.@add_variable(c, x, N; start = (LV.cragg_levy_start(i) for i = 1:N))
+    EM.@add_constraint(c, LV.cragg_levy_constraint(x, k) for k = 1:N-2)
+    EM.@add_objective(c, LV.cragg_levy_objective(x, i) for i = 1:N÷2-1)
     return EM.ExaModel(c; prod = prod)
 end

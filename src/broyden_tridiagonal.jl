@@ -3,3 +3,7 @@
 # Extra objective terms are introduced to handle x[0] == 0 and x[n+1] == 0
 
 function broyden_tridiagonal_model end
+@inline broyden_tridiagonal_constraint(x, k) = 8 * x[k+2] * (x[k+2]^2 - x[k+1]) - 2 * (1 - x[k+2]) +
+    4 * (x[k+2] - x[k+3]^2) + x[k+1]^2 - x[k] + x[k+3] - x[k+4]^2
+@inline broyden_tridiagonal_objective(x, i) = abs((3 - 2 * x[i]) * x[i] - x[i-1] - x[i+1] + 1)^7 / 3
+@inline broyden_tridiagonal_objective_boundary(x, N) = abs((3 - 2 * x[1]) * x[1] - x[2] + 1)^7 / 3 + abs((3 - 2 * x[N]) * x[N] - x[N-1] + 1)^7 / 3
