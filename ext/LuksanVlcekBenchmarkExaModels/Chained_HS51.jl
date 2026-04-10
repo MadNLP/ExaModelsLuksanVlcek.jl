@@ -4,10 +4,10 @@
     It_L2 = [4 * div(i-1, 3) for i in 2:3:nC-3]
     It_L3 = [4 * div(i-1, 3) for i in 3:3:nC-3]
     c = EM.ExaCore(T; backend = backend, kwargs...)
-    EM.@add_variable(c, x, N; start = (LV.Chained_HS51_start(i) for i = 1:N))
-    EM.@add_constraint(c, LV.Chained_HS51_constraint1(x, l) for l in It_L1)
-    EM.@add_constraint(c, LV.Chained_HS51_constraint2(x, l) for l in It_L2)
-    EM.@add_constraint(c, LV.Chained_HS51_constraint3(x, l) for l in It_L3)
-    EM.@add_objective(c, LV.Chained_HS51_objective(x, i) for i in 1:floor(Int, (N-1)/4))
+    EM.@add_var(c, x, N; start = (LV.Chained_HS51_start(i) for i = 1:N))
+    EM.@add_con(c, LV.Chained_HS51_constraint1(x, l) for l in It_L1)
+    EM.@add_con(c, LV.Chained_HS51_constraint2(x, l) for l in It_L2)
+    EM.@add_con(c, LV.Chained_HS51_constraint3(x, l) for l in It_L3)
+    EM.@add_obj(c, LV.Chained_HS51_objective(x, i) for i in 1:floor(Int, (N-1)/4))
     return EM.ExaModel(c; prod = prod)
 end
